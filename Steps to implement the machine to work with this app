@@ -55,3 +55,15 @@ ce:GetCostAndUsage (مطلوب لزر Check Cost).
 سادساً: التحقق
 
 إذا ظهرت رسالة "Connection successful"، تهانينا! الماشين الجديدة جاهزة الآن للاستخدام والتحكم الكامل. يمكنك الآن العودة للشاشة الرئيسية لمراقبة حالتها والتحكم فيها كالمعتاد.
+
+or you can run teraform file which name is main.tf 
+using this commands if you connected with the machine via tera form
+terraform init
+terraform fmt
+terraform validate
+terraform plan
+terraform apply
+terraform output
+terraform show
+terraform state list
+terraform destroy
