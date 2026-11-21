@@ -1140,7 +1140,7 @@
           <span id="costUpdatedText" class="cost-updated">Manual check only</span>
         </div>
 
-        <!-- Local Estimate (Computed from /status launchTime & hourlyRate without calling Cost Explorer) -->
+        <!-- Local Estimate -->
         <div class="session-cost-box">
           <div class="cost-label-group">
             <span class="cost-tag tag-estimate">Estimate</span>
@@ -1150,7 +1150,7 @@
           <div id="sessionCostValue" class="cost-amount-lg">$0.00</div>
         </div>
 
-        <!-- Manual Check Cost Button (ONLY trigger for /cost & Cost Explorer) -->
+        <!-- Manual Check Cost Button -->
         <div class="check-cost-bar">
           <span class="check-cost-hint">AWS Cost Explorer</span>
           <button id="checkCostBtn" class="check-cost-btn" type="button">
@@ -1299,7 +1299,7 @@
               id="apiUrlInput"
               class="form-control"
               type="url"
-              placeholder="https://xxxxxxxx.execute-api.eu-central-1.amazonaws.com/prod"
+              placeholder="https://xxxxxxxx.execute-api.eu-north-1.amazonaws.com/prod"
               autocomplete="off"
               autocapitalize="none"
               spellcheck="false"
@@ -1551,7 +1551,7 @@
         return hoursFloat * hourlyRate;
       }
 
-      async function apiRequest(path, options = {}) {
+      async function apiRequest(path = "", options = {}) {
         const settings = getSettings();
         if (!settings.apiUrl) {
           throw new Error("API URL is not configured. Open Settings first.");
@@ -1573,7 +1573,7 @@
 
         try {
           const response = await fetch(`${settings.apiUrl}${path}`, {
-            method: options.method || "GET",
+            method: options.method || "POST",
             headers,
             body: options.body ? JSON.stringify(options.body) : undefined,
             signal: controller.signal
@@ -1614,7 +1614,7 @@
         }
       }
 
-      /* ================= STATUS & SERVER CONTROL (INDEPENDENT OF /cost) ================= */
+      /* ================= STATUS & SERVER CONTROL (POST TO ROOT /) ================= */
       async function fetchStatus(silent = false) {
         const settings = getSettings();
         if (!isConfigured(settings)) {
@@ -1630,11 +1630,14 @@
         }
 
         try {
-          const query = new URLSearchParams({
-            instance_id: settings.instanceId,
-            region: settings.region
+          const data = await apiRequest("", {
+            method: "POST",
+            body: {
+              action: "status",
+              instance_id: settings.instanceId,
+              region: settings.region
+            }
           });
-          const data = await apiRequest(`/status?${query.toString()}`, { method: "GET" });
 
           const normalizedState = String(data.state || "error").toLowerCase();
           appState.ec2State = normalizedState;
@@ -1674,7 +1677,7 @@
         }
       }
 
-      /* ================= MANUAL COST EXPLORER QUERY (ONLY ON CHECK COST CLICK) ================= */
+      /* ================= MANUAL COST EXPLORER QUERY (POST TO ROOT /) ================= */
       async function fetchCosts() {
         if (appState.isCheckingCost) return null;
 
@@ -1690,7 +1693,14 @@
         updateUI();
 
         try {
-          const data = await apiRequest("/cost", { method: "GET" });
+          const data = await apiRequest("", {
+            method: "POST",
+            body: {
+              action: "cost",
+              instance_id: settings.instanceId,
+              region: settings.region
+            }
+          });
 
           if (data.currency) {
             appState.currency = String(data.currency).toUpperCase();
@@ -1728,7 +1738,7 @@
         showActionBanner("Starting server...", "pending", true);
 
         try {
-          await apiRequest("/start", {
+          await apiRequest("", {
             method: "POST",
             body: {
               instance_id: settings.instanceId,
@@ -1764,7 +1774,7 @@
         showActionBanner("Stopping server...", "pending", true);
 
         try {
-          await apiRequest("/stop", {
+          await apiRequest("", {
             method: "POST",
             body: {
               instance_id: settings.instanceId,
@@ -1884,7 +1894,7 @@
         el.checkCostIcon.style.display = appState.isCheckingCost ? "none" : "inline-block";
         el.checkCostLabel.textContent = appState.isCheckingCost ? "Checking..." : "Check Cost";
 
-        // Billed Costs (only populated after user manually clicks Check Cost)
+        // Billed Costs
         el.todayCostValue.textContent = appState.todayCost !== null
           ? formatCurrency(appState.todayCost, appState.currency)
           : "--";
@@ -2057,11 +2067,14 @@
         el.settingsFeedback.className = "settings-feedback";
 
         try {
-          const query = new URLSearchParams({
-            instance_id: vals.instanceId,
-            region: vals.region
+          const res = await apiRequest("", {
+            method: "POST",
+            body: {
+              action: "status",
+              instance_id: vals.instanceId,
+              region: vals.region
+            }
           });
-          const res = await apiRequest(`/status?${query.toString()}`, { method: "GET" });
           const stateLabel = res && res.state ? ` (State: ${res.state})` : "";
           el.settingsFeedback.className = "settings-feedback visible success";
           el.settingsFeedback.textContent = `Connection successful${stateLabel}`;
