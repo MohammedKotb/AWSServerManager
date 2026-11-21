@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#061c4e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="EC2 Control" />
+  <meta name="description" content="Mobile control panel for your AWS EC2 Windows development server." />
+
+  <title>EC2 Control</title>
+
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="./icons/icon-192.svg" />
+  <link id="appleTouchIcon" rel="apple-touch-icon" href="./icons/icon-192.svg" />
+
+  <style>
+    :root {
+      --bg-top: #07225e;
+      --bg-mid: #051846;
+      --bg-bottom: #030d29;
+      --card-bg: rgba(11, 39, 102, 0.56);
+      --card-bg-strong: rgba(9, 31, 84, 0.78);
+      --card-border: rgba(82, 148, 255, 0.32);
+      --card-highlight: rgba(255, 255, 255, 0.14);
+      --input-bg: #071942;
+      --input-border: rgba(88, 152, 255, 0.34);
+      --text-primary: #ffffff;
+      --text-secondary: #b9cef5;
+      --text-muted: #7f9ed6;
+
+      --green-main: #21e06b;
+      --green-dark: #109e47;
+      --green-glow: rgba(33, 224, 107, 0.42);
+
+      --red-main: #ff5454;
+      --red-dark: #cf212d;
+      --red-glow: rgba(255, 84, 84, 0.38);
+
+      --amber-main: #fbbf24;
+      --amber-glow: rgba(251, 191, 36, 0.38);
+
+      --slate-main: #94a3b8;
+      --slate-glow: rgba(148, 163, 184, 0.28);
+
+      --blue-btn-top: #2684ff;
+      --blue-btn-bottom: #0d5be1;
+      --aws-orange: #ff9900;
+
+      --safe-top: env(safe-area-inset-top, 16px);
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow-x: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text-primary);
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 52%, var(--bg-bottom) 100%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(38, 118, 255, 0.24) 0%, rgba(7, 34, 94, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      max-width: 440px;
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: calc(max(var(--safe-top), 18px)) 18px calc(max(var(--safe-bottom), 18px));
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      animation: fadeSlideIn 0.22s ease-out;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ================= HOME HEADER ================= */
+    .home-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding-top: 4px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .aws-logo {
+      width: 54px;
+      height: 34px;
+      flex-shrink: 0;
+    }
+
+    .brand-divider {
+      width: 1px;
+      height: 34px;
+      background: rgba(255, 255, 255, 0.28);
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      line-height: 1.15;
+      color: #ffffff;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .icon-circle-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(114, 172, 255, 0.36);
+      background: radial-gradient(circle at 30% 25%, rgba(56, 114, 230, 0.55), rgba(20, 56, 138, 0.55));
+      box-shadow: 0 4px 14px rgba(0, 10, 38, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease;
+    }
+
+    .icon-circle-btn:active {
+      transform: scale(0.93);
+    }
+
+    .icon-circle-btn.spinning svg {
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ================= GLASS CARD BASE ================= */
+    .glass-card {
+      position: relative;
+      background: linear-gradient(180deg, rgba(16, 52, 128, 0.62) 0%, rgba(8, 28, 78, 0.66) 100%);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      box-shadow: 0 16px 38px rgba(0, 8, 32, 0.52), inset 0 1px 0 var(--card-highlight);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    /* ================= MAIN SERVER CARD ================= */
+    .server-card {
+      padding: 22px 18px 20px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .server-card::after {
+      content: "";
+      position: absolute;
+      top: -16px;
+      right: 14px;
+      width: 84px;
+      height: 36px;
+      border-radius: 999px;
+      background: rgba(34, 92, 204, 0.26);
+      filter: blur(1px);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .server-orb-wrap {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      margin: 0 auto 14px;
+    }
+
+    .server-orb {
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 35%, rgba(22, 68, 162, 0.85), rgba(8, 28, 78, 0.95));
+      border: 2.5px solid var(--green-main);
+      box-shadow: 0 0 28px var(--green-glow), inset 0 0 18px rgba(33, 224, 107, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .server-orb.state-stopped {
+      border-color: var(--slate-main);
+      box-shadow: 0 0 22px var(--slate-glow), inset 0 0 14px rgba(148, 163, 184, 0.14);
+    }
+
+    .server-orb.state-pending {
+      border-color: var(--amber-main);
+      box-shadow: 0 0 26px var(--amber-glow), inset 0 0 16px rgba(251, 191, 36, 0.2);
+      animation: pulseOrb 1.6s ease-in-out infinite;
+    }
+
+    .server-orb.state-error {
+      border-color: var(--red-main);
+      box-shadow: 0 0 26px var(--red-glow), inset 0 0 16px rgba(255, 84, 84, 0.22);
+    }
+
+    @keyframes pulseOrb {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    .orb-status-badge {
+      position: absolute;
+      right: 2px;
+      bottom: 4px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #2be875 0%, #11a94d 100%);
+      border: 2.5px solid #08235c;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      transition: background 0.3s ease;
+    }
+
+    .orb-status-badge.state-stopped {
+      background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+    }
+
+    .orb-status-badge.state-pending {
+      background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+    }
+
+    .orb-status-badge.state-error {
+      background: linear-gradient(180deg, #ff5c5c 0%, #dc2626 100%);
+    }
+
+    .server-heading {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      margin-bottom: 10px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 7px 22px;
+      border-radius: 999px;
+      background: rgba(16, 114, 58, 0.52);
+      border: 1.5px solid var(--green-main);
+      box-shadow: 0 0 16px rgba(33, 224, 107, 0.22);
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .status-pill.state-stopped {
+      background: rgba(71, 85, 105, 0.45);
+      border-color: var(--slate-main);
+      box-shadow: none;
+    }
+
+    .status-pill.state-pending {
+      background: rgba(180, 115, 14, 0.45);
+      border-color: var(--amber-main);
+      box-shadow: 0 0 16px rgba(251, 191, 36, 0.22);
+    }
+
+    .status-pill.state-error {
+      background: rgba(185, 28, 28, 0.48);
+      border-color: var(--red-main);
+      box-shadow: 0 0 16px rgba(255, 84, 84, 0.24);
+    }
+
+    .status-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--green-main);
+      box-shadow: 0 0 8px var(--green-main);
+      flex-shrink: 0;
+    }
+
+    .status-pill.state-stopped .status-dot {
+      background: #cbd5e1;
+      box-shadow: none;
+    }
+
+    .status-pill.state-pending .status-dot {
+      background: var(--amber-main);
+      box-shadow: 0 0 8px var(--amber-main);
+      animation: blinkDot 1s ease-in-out infinite;
+    }
+
+    .status-pill.state-error .status-dot {
+      background: var(--red-main);
+      box-shadow: 0 0 8px var(--red-main);
+    }
+
+    @keyframes blinkDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    .instance-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .instance-id-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .copy-id-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .copy-id-btn:active {
+      transform: scale(0.94);
+    }
+
+    .session-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(6, 22, 62, 0.65);
+      border: 1px solid rgba(102, 163, 255, 0.24);
+      font-size: 13px;
+      font-weight: 600;
+      color: #dce9ff;
+    }
+
+    .card-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(130, 182, 255, 0.24), transparent);
+      margin: 0 0 16px;
+    }
+
+    .action-feedback {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(251, 191, 36, 0.16);
+      border: 1px solid rgba(251, 191, 36, 0.42);
+      color: #fde68a;
+    }
+
+    .action-feedback.visible {
+      display: flex;
+    }
+
+    .action-feedback.success {
+      background: rgba(33, 224, 107, 0.16);
+      border-color: rgba(33, 224, 107, 0.42);
+      color: #bbf7d0;
+    }
+
+    .action-feedback.error {
+      background: rgba(255, 84, 84, 0.18);
+      border-color: rgba(255, 84, 84, 0.45);
+      color: #fecaca;
+    }
+
+    .mini-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .control-tile {
+      height: 98px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+      user-select: none;
+    }
+
+    .control-tile:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+
+    .control-tile:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      filter: grayscale(0.2);
+    }
+
+    .btn-start {
+      background: linear-gradient(180deg, #27de72 0%, #10a54b 100%);
+      box-shadow: 0 10px 22px rgba(17, 179, 82, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.34);
+    }
+
+    .btn-stop {
+      background: linear-gradient(180deg, #ff5656 0%, #d1202c 100%);
+      box-shadow: 0 10px 22px rgba(217, 38, 49, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    /* ================= COST DASHBOARD CARD ================= */
+    .cost-card {
+      padding: 16px 16px 14px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+
+    .cost-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .cost-card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .cost-updated {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .session-cost-box {
+      background: rgba(6, 22, 62, 0.62);
+      border: 1px solid rgba(94, 158, 255, 0.26);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .cost-label-group {
+      min-width: 0;
+    }
+
+    .cost-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+    }
+
+    .tag-estimate {
+      background: rgba(251, 191, 36, 0.18);
+      color: #fcd34d;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+
+    .tag-billed {
+      background: rgba(56, 189, 248, 0.16);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.32);
+    }
+
+    .cost-sublabel {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .cost-rate-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .cost-amount-lg {
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.4px;
+      flex-shrink: 0;
+    }
+
+    /* Manual Check Cost Action Bar */
+    .check-cost-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .check-cost-hint {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .check-cost-btn {
+      height: 38px;
+      padding: 0 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(135, 192, 255, 0.45);
+      background: linear-gradient(180deg, var(--blue-btn-top) 0%, var(--blue-btn-bottom) 100%);
+      box-shadow: 0 6px 16px rgba(13, 91, 225, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    .check-cost-btn:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .check-cost-btn:disabled {
+      opacity: 0.52;
+      cursor: not-allowed;
+    }
+
+    .cost-error-msg {
+      display: none;
+      margin-bottom: 10px;
+      padding: 8px 11px;
+      border-radius: 10px;
+      background: rgba(255, 84, 84, 0.16);
+      border: 1px solid rgba(255, 84, 84, 0.4);
+      color: #fecaca;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .cost-error-msg.visible {
+      display: block;
+    }
+
+    .billed-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .billed-box {
+      background: rgba(6, 22, 62, 0.55);
+      border: 1px solid rgba(94, 158, 255, 0.22);
+      border-radius: 14px;
+      padding: 11px 12px;
+    }
+
+    .billed-amount {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 4px 0 2px;
+      letter-spacing: -0.3px;
+    }
+
+    .billed-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .cost-disclaimer {
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+
+    /* ================= SECURITY BANNER & FOOTER ================= */
+    .security-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 16px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    .security-banner p {
+      font-size: 13px;
+      line-height: 1.38;
+      color: #dce9ff;
+    }
+
+    .app-footer {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 6px 0 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .footer-line {
+      flex: 1;
+      max-width: 64px;
+      height: 1px;
+      background: rgba(130, 182, 255, 0.25);
+    }
+
+    /* ================= SETTINGS SCREEN ================= */
+    .settings-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #1e73f8 0%, #0e4ec4 100%);
+      border: 1px solid rgba(130, 190, 255, 0.42);
+      box-shadow: 0 10px 24px rgba(5, 22, 68, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      margin-bottom: 16px;
+    }
+
+    .nav-back-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .nav-back-btn:active {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .settings-topbar-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .settings-card {
+      padding: 20px 18px;
+      border-radius: 24px;
+      margin-bottom: 14px;
+    }
+
+    .settings-card-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .settings-card-head h2 {
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .settings-card-head p {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #e6f0ff;
+      margin-bottom: 8px;
+    }
+
+    .form-control {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border-radius: 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: #ffffff;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-control::placeholder {
+      color: #6b88bd;
+    }
+
+    .form-control:focus {
+      border-color: #4da3ff;
+      box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.22);
+    }
+
+    select.form-control {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 38px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23b9cef5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 13px center;
+    }
+
+    .primary-save-btn {
+      width: 100%;
+      height: 52px;
+      margin-top: 4px;
+      border-radius: 15px;
+      border: 1px solid rgba(145, 200, 255, 0.42);
+      background: linear-gradient(180deg, var(--blue-btn-top) 0%, var(--blue-btn-bottom) 100%);
+      box-shadow: 0 10px 22px rgba(13, 91, 225, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    .primary-save-btn:active {
+      transform: scale(0.97);
+    }
+
+    .secondary-test-btn {
+      width: 100%;
+      height: 46px;
+      margin-top: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(110, 168, 255, 0.38);
+      background: rgba(15, 48, 118, 0.55);
+      color: #dce9ff;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+
+    .secondary-test-btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    .secondary-test-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .settings-feedback {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .settings-feedback.visible {
+      display: block;
+    }
+
+    .settings-feedback.success {
+      background: rgba(33, 224, 107, 0.16);
+      border: 1px solid rgba(33, 224, 107, 0.42);
+      color: #bbf7d0;
+    }
+
+    .settings-feedback.error {
+      background: rgba(255, 84, 84, 0.18);
+      border: 1px solid rgba(255, 84, 84, 0.45);
+      color: #fecaca;
+    }
+
+    /* ================= CONFIRMATION MODAL ================= */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(2, 8, 26, 0.74);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-dialog {
+      width: 100%;
+      max-width: 360px;
+      padding: 22px 20px 18px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #103585 0%, #081e54 100%);
+      border: 1px solid rgba(110, 172, 255, 0.38);
+      box-shadow: 0 22px 48px rgba(0, 5, 22, 0.7);
+      text-align: center;
+    }
+
+    .modal-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      background: rgba(255, 84, 84, 0.18);
+      border: 1px solid rgba(255, 84, 84, 0.45);
+      color: #ff6b6b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-title {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      height: 44px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+
+    .modal-btn-cancel {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .modal-btn-confirm {
+      background: linear-gradient(180deg, #ff5656 0%, #d1202c 100%);
+      color: #ffffff;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(max(var(--safe-bottom), 18px) + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 60;
+      max-width: 90%;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(8, 26, 72, 0.94);
+      border: 1px solid rgba(110, 172, 255, 0.45);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- ==================== HOME / DASHBOARD SCREEN ==================== -->
+    <main id="homeView" class="screen active" aria-label="EC2 Control Dashboard">
+      <header class="home-header">
+        <div class="brand-group">
+          <svg class="aws-logo" viewBox="0 0 120 72" fill="none" aria-label="AWS">
+            <text x="4" y="42" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="42" letter-spacing="-1.5">aws</text>
+            <path d="M12 52C34 65 72 65 98 50" stroke="#FF9900" stroke-width="5.2" stroke-linecap="round" />
+            <path d="M90 46L102 49L96 60" stroke="#FF9900" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <div class="brand-divider"></div>
+          <div class="brand-text">
+            <h1 class="brand-title">EC2 Control</h1>
+            <p class="brand-subtitle">Manage Your Server Easily</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="refreshBtn" class="icon-circle-btn" type="button" title="Refresh server status" aria-label="Refresh server status">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
+          <button id="openSettingsBtn" class="icon-circle-btn" type="button" title="Settings" aria-label="Open Settings">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Server Status Card -->
+      <section class="glass-card server-card" aria-live="polite">
+        <div class="server-orb-wrap">
+          <div id="serverOrb" class="server-orb state-pending">
+            <svg width="56" height="54" viewBox="0 0 64 62" fill="none">
+              <defs>
+                <linearGradient id="rackGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#68b7ff" />
+                  <stop offset="100%" stop-color="#1b6be0" />
+                </linearGradient>
+              </defs>
+              <rect x="6" y="6" width="52" height="14" rx="4" fill="url(#rackGrad)" />
+              <circle cx="44" cy="13" r="2.2" fill="#07225e" />
+              <circle cx="51" cy="13" r="2.2" fill="#07225e" />
+
+              <rect x="6" y="24" width="52" height="14" rx="4" fill="url(#rackGrad)" />
+              <circle cx="44" cy="31" r="2.2" fill="#07225e" />
+              <circle cx="51" cy="31" r="2.2" fill="#07225e" />
+
+              <rect x="6" y="42" width="52" height="14" rx="4" fill="url(#rackGrad)" />
+              <circle cx="44" cy="49" r="2.2" fill="#07225e" />
+              <circle cx="51" cy="49" r="2.2" fill="#07225e" />
+            </svg>
+          </div>
+          <div id="orbBadge" class="orb-status-badge state-pending">
+            <svg id="orbBadgeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <h2 class="server-heading">Server Status</h2>
+
+        <div id="statusPill" class="status-pill state-pending">
+          <span class="status-dot"></span>
+          <span id="statusText">Loading...</span>
+        </div>
+
+        <div class="instance-meta">
+          <div class="instance-id-row">
+            <span id="displayInstanceId">Instance ID: Not configured</span>
+            <button id="copyIdBtn" class="copy-id-btn" type="button" title="Copy Instance ID">Copy</button>
+          </div>
+          <div id="sessionDurationBadge" class="session-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="sessionDurationText">Checking session...</span>
+          </div>
+        </div>
+
+        <div class="card-divider"></div>
+
+        <div id="actionFeedback" class="action-feedback" role="status">
+          <span id="feedbackSpinner" class="mini-spinner"></span>
+          <span id="actionFeedbackText">Starting server...</span>
+        </div>
+
+        <div class="control-grid">
+          <button id="startBtn" class="control-tile btn-start" type="button" disabled>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="6 4 20 12 6 20 6 4"></polygon>
+            </svg>
+            <span id="startBtnLabel">Start EC2</span>
+          </button>
+
+          <button id="stopBtn" class="control-tile btn-stop" type="button" disabled>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="5" y="5" width="14" height="14" rx="2.5"></rect>
+            </svg>
+            <span id="stopBtnLabel">Stop EC2</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Cost Dashboard Card -->
+      <section class="glass-card cost-card" aria-label="AWS Cost Overview">
+        <div class="cost-card-header">
+          <div class="cost-card-title">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <span>Cost Overview</span>
+          </div>
+          <span id="costUpdatedText" class="cost-updated">Manual check only</span>
+        </div>
+
+        <!-- Local Estimate (Computed from /status launchTime & hourlyRate without calling Cost Explorer) -->
+        <div class="session-cost-box">
+          <div class="cost-label-group">
+            <span class="cost-tag tag-estimate">Estimate</span>
+            <div class="cost-sublabel">Estimated current session cost</div>
+            <div id="hourlyRateHint" class="cost-rate-note">Based on active runtime &amp; EC2 hourly rate</div>
+          </div>
+          <div id="sessionCostValue" class="cost-amount-lg">$0.00</div>
+        </div>
+
+        <!-- Manual Check Cost Button (ONLY trigger for /cost & Cost Explorer) -->
+        <div class="check-cost-bar">
+          <span class="check-cost-hint">AWS Cost Explorer</span>
+          <button id="checkCostBtn" class="check-cost-btn" type="button">
+            <span id="checkCostSpinner" class="mini-spinner" style="display:none;"></span>
+            <svg id="checkCostIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <span id="checkCostLabel">Check Cost</span>
+          </button>
+        </div>
+
+        <div id="costErrorMsg" class="cost-error-msg" role="status"></div>
+
+        <div class="billed-grid">
+          <div class="billed-box">
+            <span class="cost-tag tag-billed">AWS Billed</span>
+            <div id="todayCostValue" class="billed-amount">--</div>
+            <div class="billed-label">Today's AWS cost</div>
+          </div>
+
+          <div class="billed-box">
+            <span class="cost-tag tag-billed">AWS Billed</span>
+            <div id="monthCostValue" class="billed-amount">--</div>
+            <div class="billed-label">This month's AWS cost</div>
+          </div>
+        </div>
+
+        <p class="cost-disclaimer">
+          * Current session is an EC2 compute estimate only. Today &amp; Month are fetched only when you tap <strong>Check Cost</strong> (may include EBS/IPv4 and lag real-time).
+        </p>
+      </section>
+
+      <!-- Security Note Card -->
+      <section class="glass-card security-banner">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#22e56b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <polyline points="9 12 11 14 15 10"></polyline>
+        </svg>
+        <p>Your server is managed securely through AWS.</p>
+      </section>
+
+      <footer class="app-footer">
+        <span class="footer-line"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22e56b" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+        </svg>
+        <span>Powered by AWS</span>
+        <span class="footer-line"></span>
+      </footer>
+    </main>
+
+    <!-- ==================== SETTINGS SCREEN ==================== -->
+    <section id="settingsView" class="screen" aria-label="Settings">
+      <header class="settings-topbar">
+        <button id="backHomeBtn" class="nav-back-btn" type="button" aria-label="Back to Home">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+
+        <h1 class="settings-topbar-title">Settings</h1>
+
+        <button id="homeIconBtn" class="icon-circle-btn" type="button" style="width:38px;height:38px;" aria-label="Go to Dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="glass-card settings-card">
+        <div class="settings-card-head">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <div>
+            <h2>AWS Configuration</h2>
+            <p>Configure your AWS details</p>
+          </div>
+        </div>
+
+        <form id="settingsForm" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="regionSelect">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <span>AWS Region</span>
+            </label>
+            <select id="regionSelect" class="form-control">
+              <option value="eu-central-1">eu-central-1 (Frankfurt)</option>
+              <option value="us-east-1">us-east-1 (N. Virginia)</option>
+              <option value="us-west-2">us-west-2 (Oregon)</option>
+              <option value="eu-west-1">eu-west-1 (Ireland)</option>
+              <option value="eu-west-2">eu-west-2 (London)</option>
+              <option value="me-south-1">me-south-1 (Bahrain)</option>
+              <option value="me-central-1">me-central-1 (UAE)</option>
+              <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+              <option value="custom">Custom region...</option>
+            </select>
+            <input
+              id="customRegionInput"
+              class="form-control"
+              type="text"
+              placeholder="e.g. ap-northeast-1"
+              style="display:none;margin-top:8px;"
+              autocomplete="off"
+              autocapitalize="none"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="instanceIdInput">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="2"></rect>
+                <rect x="2" y="14" width="20" height="7" rx="2"></rect>
+                <line x1="6" y1="6.5" x2="6.01" y2="6.5"></line>
+                <line x1="6" y1="17.5" x2="6.01" y2="17.5"></line>
+              </svg>
+              <span>EC2 Instance ID</span>
+            </label>
+            <input
+              id="instanceIdInput"
+              class="form-control"
+              type="text"
+              placeholder="i-0abc123456789def0"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="apiUrlInput">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+              <span>API URL</span>
+            </label>
+            <input
+              id="apiUrlInput"
+              class="form-control"
+              type="url"
+              placeholder="https://xxxxxxxx.execute-api.eu-central-1.amazonaws.com/prod"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="apiKeyInput">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
+              <span>Gateway API Key (Optional)</span>
+            </label>
+            <input
+              id="apiKeyInput"
+              class="form-control"
+              type="password"
+              placeholder="x-api-key header (optional)"
+              autocomplete="off"
+            />
+          </div>
+
+          <button id="saveSettingsBtn" class="primary-save-btn" type="submit">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>Save Settings</span>
+          </button>
+
+          <button id="testConnectionBtn" class="secondary-test-btn" type="button">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <span id="testConnectionLabel">Test Connection</span>
+          </button>
+
+          <div id="settingsFeedback" class="settings-feedback" role="status"></div>
+        </form>
+      </div>
+
+      <div class="glass-card security-banner">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <p><strong>Note:</strong><br />These settings are saved securely on your device. Never enter AWS IAM Access or Secret Keys.</p>
+      </div>
+
+      <footer class="app-footer">
+        <span class="footer-line"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+        </svg>
+        <span>Powered by AWS</span>
+        <span class="footer-line"></span>
+      </footer>
+    </section>
+  </div>
+
+  <!-- ==================== STOP CONFIRMATION MODAL ==================== -->
+  <div id="stopConfirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-dialog">
+      <div class="modal-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+        </svg>
+      </div>
+      <h3 id="modalTitle" class="modal-title">Stop the development server?</h3>
+      <p class="modal-desc">Any unsaved work inside your Windows Remote Desktop session may be lost when the EC2 instance stops.</p>
+      <div class="modal-actions">
+        <button id="cancelStopBtn" class="modal-btn modal-btn-cancel" type="button">Cancel</button>
+        <button id="confirmStopBtn" class="modal-btn modal-btn-confirm" type="button">Stop Server</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "ec2_mobile_control_settings_v1";
+      const FAST_POLL_MS = 4000;
+      const IDLE_POLL_MS = 25000;
+      const POLL_TIMEOUT_MS = 180000;
+      const REQUEST_TIMEOUT_MS = 15000;
+
+      const appState = {
+        ec2State: "loading",
+        launchTime: null,
+        hourlyRate: 0.19,
+        currency: "USD",
+        todayCost: null,
+        monthCost: null,
+        costUpdatedAt: null,
+        isCheckingCost: false,
+        isBusy: false,
+        activeTransition: null,
+        fastPollTimer: null,
+        idlePollTimer: null,
+        pollDeadline: 0,
+        sessionTicker: null
+      };
+
+      const el = {
+        homeView: document.getElementById("homeView"),
+        settingsView: document.getElementById("settingsView"),
+        openSettingsBtn: document.getElementById("openSettingsBtn"),
+        backHomeBtn: document.getElementById("backHomeBtn"),
+        homeIconBtn: document.getElementById("homeIconBtn"),
+        refreshBtn: document.getElementById("refreshBtn"),
+
+        serverOrb: document.getElementById("serverOrb"),
+        orbBadge: document.getElementById("orbBadge"),
+        orbBadgeIcon: document.getElementById("orbBadgeIcon"),
+        statusPill: document.getElementById("statusPill"),
+        statusText: document.getElementById("statusText"),
+        displayInstanceId: document.getElementById("displayInstanceId"),
+        copyIdBtn: document.getElementById("copyIdBtn"),
+        sessionDurationText: document.getElementById("sessionDurationText"),
+
+        actionFeedback: document.getElementById("actionFeedback"),
+        feedbackSpinner: document.getElementById("feedbackSpinner"),
+        actionFeedbackText: document.getElementById("actionFeedbackText"),
+
+        startBtn: document.getElementById("startBtn"),
+        startBtnLabel: document.getElementById("startBtnLabel"),
+        stopBtn: document.getElementById("stopBtn"),
+        stopBtnLabel: document.getElementById("stopBtnLabel"),
+
+        sessionCostValue: document.getElementById("sessionCostValue"),
+        hourlyRateHint: document.getElementById("hourlyRateHint"),
+        checkCostBtn: document.getElementById("checkCostBtn"),
+        checkCostSpinner: document.getElementById("checkCostSpinner"),
+        checkCostIcon: document.getElementById("checkCostIcon"),
+        checkCostLabel: document.getElementById("checkCostLabel"),
+        costErrorMsg: document.getElementById("costErrorMsg"),
+        todayCostValue: document.getElementById("todayCostValue"),
+        monthCostValue: document.getElementById("monthCostValue"),
+        costUpdatedText: document.getElementById("costUpdatedText"),
+
+        settingsForm: document.getElementById("settingsForm"),
+        regionSelect: document.getElementById("regionSelect"),
+        customRegionInput: document.getElementById("customRegionInput"),
+        instanceIdInput: document.getElementById("instanceIdInput"),
+        apiUrlInput: document.getElementById("apiUrlInput"),
+        apiKeyInput: document.getElementById("apiKeyInput"),
+        testConnectionBtn: document.getElementById("testConnectionBtn"),
+        testConnectionLabel: document.getElementById("testConnectionLabel"),
+        settingsFeedback: document.getElementById("settingsFeedback"),
+
+        stopConfirmModal: document.getElementById("stopConfirmModal"),
+        cancelStopBtn: document.getElementById("cancelStopBtn"),
+        confirmStopBtn: document.getElementById("confirmStopBtn"),
+        toast: document.getElementById("toast")
+      };
+
+      function getSettings() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return { region: "eu-central-1", instanceId: "", apiUrl: "", apiKey: "" };
+          }
+          const parsed = JSON.parse(raw);
+          return {
+            region: (parsed.region || "eu-central-1").trim(),
+            instanceId: (parsed.instanceId || "").trim(),
+            apiUrl: (parsed.apiUrl || "").trim().replace(/\/+$/, ""),
+            apiKey: (parsed.apiKey || "").trim()
+          };
+        } catch (_) {
+          return { region: "eu-central-1", instanceId: "", apiUrl: "", apiKey: "" };
+        }
+      }
+
+      function saveSettings(settingsObj) {
+        const clean = {
+          region: (settingsObj.region || "eu-central-1").trim(),
+          instanceId: (settingsObj.instanceId || "").trim(),
+          apiUrl: (settingsObj.apiUrl || "").trim().replace(/\/+$/, ""),
+          apiKey: (settingsObj.apiKey || "").trim()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+        return clean;
+      }
+
+      function populateSettingsForm() {
+        const s = getSettings();
+        const presetOptions = Array.from(el.regionSelect.options).map((o) => o.value);
+        if (presetOptions.includes(s.region) && s.region !== "custom") {
+          el.regionSelect.value = s.region;
+          el.customRegionInput.style.display = "none";
+        } else {
+          el.regionSelect.value = "custom";
+          el.customRegionInput.style.display = "block";
+          el.customRegionInput.value = s.region;
+        }
+        el.instanceIdInput.value = s.instanceId;
+        el.apiUrlInput.value = s.apiUrl;
+        el.apiKeyInput.value = s.apiKey;
+      }
+
+      function isConfigured(settings = getSettings()) {
+        return Boolean(settings.apiUrl && settings.instanceId);
+      }
+
+      function formatCurrency(amount, currencyCode = "USD") {
+        if (typeof amount !== "number" || Number.isNaN(amount)) return "--";
+        try {
+          return new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency: currencyCode || "USD",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(amount);
+        } catch (_) {
+          return `${currencyCode || "$"} ${amount.toFixed(2)}`;
+        }
+      }
+
+      function getElapsedHours(launchTimeIso) {
+        if (!launchTimeIso) return null;
+        const startMs = Date.parse(launchTimeIso);
+        if (Number.isNaN(startMs)) return null;
+        const diffMs = Date.now() - startMs;
+        if (diffMs < 0) return 0;
+        return diffMs / 3600000;
+      }
+
+      function formatSessionDuration(launchTimeIso, state) {
+        if (state !== "running") return "No active session";
+        const hoursFloat = getElapsedHours(launchTimeIso);
+        if (hoursFloat === null) return "Running (start time unavailable)";
+        const totalMinutes = Math.floor(hoursFloat * 60);
+        const hrs = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        const pad = (n) => String(n).padStart(2, "0");
+        return `Running for ${pad(hrs)}h ${pad(mins)}m`;
+      }
+
+      function calculateSessionCost(launchTimeIso, hourlyRate, state) {
+        if (state !== "running") return 0;
+        const hoursFloat = getElapsedHours(launchTimeIso);
+        if (hoursFloat === null || typeof hourlyRate !== "number" || hourlyRate <= 0) return 0;
+        return hoursFloat * hourlyRate;
+      }
+
+      async function apiRequest(path, options = {}) {
+        const settings = getSettings();
+        if (!settings.apiUrl) {
+          throw new Error("API URL is not configured. Open Settings first.");
+        }
+        if (!settings.apiUrl.startsWith("https://") && !settings.apiUrl.startsWith("http://localhost")) {
+          throw new Error("API URL must use HTTPS.");
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+        const headers = {
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        };
+        if (settings.apiKey) {
+          headers["x-api-key"] = settings.apiKey;
+        }
+
+        try {
+          const response = await fetch(`${settings.apiUrl}${path}`, {
+            method: options.method || "GET",
+            headers,
+            body: options.body ? JSON.stringify(options.body) : undefined,
+            signal: controller.signal
+          });
+
+          let data = null;
+          const text = await response.text();
+          if (text) {
+            try {
+              data = JSON.parse(text);
+            } catch (_) {
+              data = { message: text };
+            }
+          }
+
+          if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+              throw new Error("Unauthorized request. Check your API Gateway key or permissions.");
+            }
+            if (response.status === 404) {
+              throw new Error((data && data.error) || "EC2 instance or endpoint not found.");
+            }
+            const serverMsg = (data && (data.error || data.message)) || `Server error (${response.status})`;
+            throw new Error(serverMsg);
+          }
+
+          return data || {};
+        } catch (err) {
+          if (err.name === "AbortError") {
+            throw new Error("Request timed out. Please check your connection.");
+          }
+          if (err instanceof TypeError) {
+            throw new Error("Unable to connect to the server.");
+          }
+          throw err;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
+      /* ================= STATUS & SERVER CONTROL (INDEPENDENT OF /cost) ================= */
+      async function fetchStatus(silent = false) {
+        const settings = getSettings();
+        if (!isConfigured(settings)) {
+          appState.ec2State = "stopped";
+          appState.launchTime = null;
+          updateUI();
+          showActionBanner("Configure your API URL and Instance ID in Settings.", "error", false);
+          return null;
+        }
+
+        if (!silent) {
+          el.refreshBtn.classList.add("spinning");
+        }
+
+        try {
+          const query = new URLSearchParams({
+            instanceId: settings.instanceId,
+            region: settings.region
+          });
+          const data = await apiRequest(`/status?${query.toString()}`, { method: "GET" });
+
+          const normalizedState = String(data.state || "error").toLowerCase();
+          appState.ec2State = normalizedState;
+          appState.launchTime = data.launchTime || null;
+          if (typeof data.hourlyRate === "number" && !Number.isNaN(data.hourlyRate)) {
+            appState.hourlyRate = data.hourlyRate;
+          }
+
+          if (appState.activeTransition === "starting" && normalizedState === "running") {
+            appState.activeTransition = null;
+            appState.isBusy = false;
+            stopPolling();
+            showActionBanner("Server is now running", "success", false);
+            setTimeout(() => hideActionBanner(), 4000);
+          } else if (appState.activeTransition === "stopping" && normalizedState === "stopped") {
+            appState.activeTransition = null;
+            appState.isBusy = false;
+            stopPolling();
+            showActionBanner("Server is now stopped", "success", false);
+            setTimeout(() => hideActionBanner(), 4000);
+          } else if (!appState.activeTransition) {
+            hideActionBanner();
+          }
+
+          updateUI();
+          return data;
+        } catch (err) {
+          appState.ec2State = "error";
+          appState.isBusy = false;
+          appState.activeTransition = null;
+          stopPolling();
+          updateUI();
+          showError(err.message || "Unable to connect to the server.");
+          return null;
+        } finally {
+          el.refreshBtn.classList.remove("spinning");
+        }
+      }
+
+      /* ================= MANUAL COST EXPLORER QUERY (ONLY ON CHECK COST CLICK) ================= */
+      async function fetchCosts() {
+        if (appState.isCheckingCost) return null;
+
+        const settings = getSettings();
+        if (!settings.apiUrl) {
+          el.costErrorMsg.textContent = "Configure your API URL in Settings first.";
+          el.costErrorMsg.classList.add("visible");
+          return null;
+        }
+
+        appState.isCheckingCost = true;
+        el.costErrorMsg.classList.remove("visible");
+        updateUI();
+
+        try {
+          const data = await apiRequest("/cost", { method: "GET" });
+
+          if (data.currency) {
+            appState.currency = String(data.currency).toUpperCase();
+          }
+          appState.todayCost = typeof data.today === "number" ? data.today : null;
+          appState.monthCost = typeof data.month === "number" ? data.month : null;
+          appState.costUpdatedAt = data.updatedAt || new Date().toISOString();
+
+          showToast("Cost updated");
+          return data;
+        } catch (err) {
+          el.costErrorMsg.textContent = err.message || "Unable to load Cost Explorer data.";
+          el.costErrorMsg.classList.add("visible");
+          return null;
+        } finally {
+          appState.isCheckingCost = false;
+          updateUI();
+        }
+      }
+
+      async function startServer() {
+        if (appState.isBusy || appState.ec2State === "running") return;
+
+        const settings = getSettings();
+        if (!isConfigured(settings)) {
+          openSettingsScreen();
+          showToast("Please configure your AWS details first.");
+          return;
+        }
+
+        appState.isBusy = true;
+        appState.activeTransition = "starting";
+        appState.ec2State = "pending";
+        updateUI();
+        showActionBanner("Starting server...", "pending", true);
+
+        try {
+          await apiRequest("/start", {
+            method: "POST",
+            body: {
+              instanceId: settings.instanceId,
+              region: settings.region
+            }
+          });
+
+          showActionBanner("Server is starting...", "pending", true);
+          startPolling("running");
+        } catch (err) {
+          appState.isBusy = false;
+          appState.activeTransition = null;
+          updateUI();
+          showError(err.message || "Failed to start the server.");
+        }
+      }
+
+      async function stopServer() {
+        if (appState.isBusy || appState.ec2State === "stopped") return;
+
+        const settings = getSettings();
+        if (!isConfigured(settings)) {
+          openSettingsScreen();
+          showToast("Please configure your AWS details first.");
+          return;
+        }
+
+        appState.isBusy = true;
+        appState.activeTransition = "stopping";
+        appState.ec2State = "stopping";
+        updateUI();
+        showActionBanner("Stopping server...", "pending", true);
+
+        try {
+          await apiRequest("/stop", {
+            method: "POST",
+            body: {
+              instanceId: settings.instanceId,
+              region: settings.region
+            }
+          });
+
+          showActionBanner("Server is stopping...", "pending", true);
+          startPolling("stopped");
+        } catch (err) {
+          appState.isBusy = false;
+          appState.activeTransition = null;
+          updateUI();
+          showError(err.message || "Failed to stop the server.");
+        }
+      }
+
+      function startPolling(targetState) {
+        stopPolling();
+        appState.pollDeadline = Date.now() + POLL_TIMEOUT_MS;
+
+        appState.fastPollTimer = setInterval(async () => {
+          if (Date.now() > appState.pollDeadline) {
+            stopPolling();
+            appState.isBusy = false;
+            appState.activeTransition = null;
+            updateUI();
+            showError(`Timed out waiting for server to become ${targetState}. Tap refresh to check again.`);
+            return;
+          }
+          await fetchStatus(true);
+        }, FAST_POLL_MS);
+      }
+
+      function stopPolling() {
+        if (appState.fastPollTimer) {
+          clearInterval(appState.fastPollTimer);
+          appState.fastPollTimer = null;
+        }
+      }
+
+      function startIdleRefresh() {
+        if (appState.idlePollTimer) clearInterval(appState.idlePollTimer);
+        appState.idlePollTimer = setInterval(() => {
+          if (document.visibilityState === "visible" && !appState.fastPollTimer && isConfigured()) {
+            fetchStatus(true);
+          }
+        }, IDLE_POLL_MS);
+      }
+
+      function getVisualVariant(state) {
+        switch (state) {
+          case "running":
+            return { cls: "state-running", label: "Running" };
+          case "stopped":
+            return { cls: "state-stopped", label: "Stopped" };
+          case "pending":
+            return { cls: "state-pending", label: "Pending" };
+          case "stopping":
+          case "shutting-down":
+            return { cls: "state-pending", label: "Stopping" };
+          case "loading":
+            return { cls: "state-pending", label: "Loading..." };
+          case "terminated":
+            return { cls: "state-error", label: "Terminated" };
+          default:
+            return { cls: "state-error", label: "Error" };
+        }
+      }
+
+      function updateBadgeSvg(state) {
+        if (state === "running") {
+          el.orbBadgeIcon.innerHTML = `<polyline points="20 6 9 17 4 12"></polyline>`;
+        } else if (state === "stopped") {
+          el.orbBadgeIcon.innerHTML = `<line x1="6" y1="12" x2="18" y2="12"></line>`;
+        } else if (state === "pending" || state === "stopping" || state === "shutting-down" || state === "loading") {
+          el.orbBadgeIcon.innerHTML = `<circle cx="12" cy="12" r="1"></circle><circle cx="17" cy="12" r="1"></circle><circle cx="7" cy="12" r="1"></circle>`;
+        } else {
+          el.orbBadgeIcon.innerHTML = `<line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>`;
+        }
+      }
+
+      function updateDynamicTimersAndEstimates() {
+        const state = appState.ec2State;
+        el.sessionDurationText.textContent = formatSessionDuration(appState.launchTime, state);
+
+        const estCost = calculateSessionCost(appState.launchTime, appState.hourlyRate, state);
+        el.sessionCostValue.textContent = formatCurrency(estCost, appState.currency);
+
+        if (typeof appState.hourlyRate === "number" && appState.hourlyRate > 0) {
+          el.hourlyRateHint.textContent = `Est. compute only @ ${formatCurrency(appState.hourlyRate, appState.currency)}/hr`;
+        }
+      }
+
+      function updateUI() {
+        const settings = getSettings();
+        const state = appState.ec2State;
+        const visual = getVisualVariant(state);
+
+        el.serverOrb.className = `server-orb ${visual.cls}`;
+        el.orbBadge.className = `orb-status-badge ${visual.cls}`;
+        el.statusPill.className = `status-pill ${visual.cls}`;
+        el.statusText.textContent = visual.label;
+        updateBadgeSvg(state);
+
+        el.displayInstanceId.textContent = settings.instanceId
+          ? `Instance ID: ${settings.instanceId}`
+          : "Instance ID: Not configured";
+        el.copyIdBtn.style.display = settings.instanceId ? "inline-block" : "none";
+
+        updateDynamicTimersAndEstimates();
+
+        // Check Cost button state
+        el.checkCostBtn.disabled = !settings.apiUrl || appState.isCheckingCost;
+        el.checkCostSpinner.style.display = appState.isCheckingCost ? "inline-block" : "none";
+        el.checkCostIcon.style.display = appState.isCheckingCost ? "none" : "inline-block";
+        el.checkCostLabel.textContent = appState.isCheckingCost ? "Checking..." : "Check Cost";
+
+        // Billed Costs (only populated after user manually clicks Check Cost)
+        el.todayCostValue.textContent = appState.todayCost !== null
+          ? formatCurrency(appState.todayCost, appState.currency)
+          : "--";
+        el.monthCostValue.textContent = appState.monthCost !== null
+          ? formatCurrency(appState.monthCost, appState.currency)
+          : "--";
+
+        if (appState.costUpdatedAt) {
+          const dt = new Date(appState.costUpdatedAt);
+          if (!Number.isNaN(dt.getTime())) {
+            el.costUpdatedText.textContent = `Checked ${dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+          }
+        }
+
+        const configured = isConfigured(settings);
+        const isTransitional = appState.isBusy || state === "pending" || state === "stopping" || state === "shutting-down" || state === "loading";
+
+        el.startBtn.disabled = !configured || isTransitional || state === "running" || state === "terminated";
+        el.stopBtn.disabled = !configured || isTransitional || state === "stopped" || state === "terminated";
+
+        el.startBtnLabel.textContent = appState.activeTransition === "starting" ? "Starting..." : "Start EC2";
+        el.stopBtnLabel.textContent = appState.activeTransition === "stopping" ? "Stopping..." : "Stop EC2";
+      }
+
+      function showActionBanner(message, type = "pending", showSpinner = false) {
+        el.actionFeedback.className = `action-feedback visible ${type}`;
+        el.feedbackSpinner.style.display = showSpinner ? "inline-block" : "none";
+        el.actionFeedbackText.textContent = message;
+      }
+
+      function hideActionBanner() {
+        el.actionFeedback.className = "action-feedback";
+      }
+
+      function showError(message) {
+        showActionBanner(message, "error", false);
+      }
+
+      let toastTimer = null;
+      function showToast(msg) {
+        el.toast.textContent = msg;
+        el.toast.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.toast.classList.remove("show"), 2600);
+      }
+
+      function openSettingsScreen() {
+        populateSettingsForm();
+        el.settingsFeedback.className = "settings-feedback";
+        el.homeView.classList.remove("active");
+        el.settingsView.classList.add("active");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function openHomeScreen() {
+        el.settingsView.classList.remove("active");
+        el.homeView.classList.add("active");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        updateUI();
+      }
+
+      el.openSettingsBtn.addEventListener("click", openSettingsScreen);
+      el.backHomeBtn.addEventListener("click", openHomeScreen);
+      el.homeIconBtn.addEventListener("click", openHomeScreen);
+
+      el.refreshBtn.addEventListener("click", async () => {
+        await fetchStatus(false);
+        showToast("Status refreshed");
+      });
+
+      el.checkCostBtn.addEventListener("click", () => {
+        fetchCosts();
+      });
+
+      el.copyIdBtn.addEventListener("click", async () => {
+        const { instanceId } = getSettings();
+        if (!instanceId) return;
+        try {
+          await navigator.clipboard.writeText(instanceId);
+          showToast("Instance ID copied");
+        } catch (_) {
+          showToast(instanceId);
+        }
+      });
+
+      el.startBtn.addEventListener("click", () => startServer());
+
+      el.stopBtn.addEventListener("click", () => {
+        if (appState.isBusy || appState.ec2State === "stopped") return;
+        el.stopConfirmModal.classList.add("open");
+      });
+
+      el.cancelStopBtn.addEventListener("click", () => {
+        el.stopConfirmModal.classList.remove("open");
+      });
+
+      el.stopConfirmModal.addEventListener("click", (e) => {
+        if (e.target === el.stopConfirmModal) {
+          el.stopConfirmModal.classList.remove("open");
+        }
+      });
+
+      el.confirmStopBtn.addEventListener("click", () => {
+        el.stopConfirmModal.classList.remove("open");
+        stopServer();
+      });
+
+      el.regionSelect.addEventListener("change", () => {
+        el.customRegionInput.style.display = el.regionSelect.value === "custom" ? "block" : "none";
+      });
+
+      function readFormValues() {
+        const region = el.regionSelect.value === "custom"
+          ? el.customRegionInput.value.trim()
+          : el.regionSelect.value.trim();
+        return {
+          region,
+          instanceId: el.instanceIdInput.value.trim(),
+          apiUrl: el.apiUrlInput.value.trim().replace(/\/+$/, ""),
+          apiKey: el.apiKeyInput.value.trim()
+        };
+      }
+
+      function validateFormValues(vals) {
+        if (!vals.region || !/^[a-z]{2}-[a-z]+-\d+$/.test(vals.region)) {
+          return "Please enter a valid AWS Region (e.g. eu-central-1).";
+        }
+        if (!vals.instanceId || !/^i-[a-f0-9]{8,17}$/i.test(vals.instanceId)) {
+          return "Please enter a valid EC2 Instance ID (e.g. i-0abc123456789def0).";
+        }
+        if (!vals.apiUrl || !/^https:\/\/.+/.test(vals.apiUrl)) {
+          return "Please enter a valid HTTPS API URL.";
+        }
+        return null;
+      }
+
+      el.settingsForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const vals = readFormValues();
+        const validationErr = validateFormValues(vals);
+        if (validationErr) {
+          el.settingsFeedback.className = "settings-feedback visible error";
+          el.settingsFeedback.textContent = validationErr;
+          return;
+        }
+
+        saveSettings(vals);
+        el.settingsFeedback.className = "settings-feedback visible success";
+        el.settingsFeedback.textContent = "Settings saved locally on this device.";
+        showToast("Settings saved");
+
+        setTimeout(async () => {
+          openHomeScreen();
+          await fetchStatus(false);
+        }, 550);
+      });
+
+      el.testConnectionBtn.addEventListener("click", async () => {
+        const vals = readFormValues();
+        const validationErr = validateFormValues(vals);
+        if (validationErr) {
+          el.settingsFeedback.className = "settings-feedback visible error";
+          el.settingsFeedback.textContent = validationErr;
+          return;
+        }
+
+        saveSettings(vals);
+        el.testConnectionBtn.disabled = true;
+        el.testConnectionLabel.textContent = "Testing connection...";
+        el.settingsFeedback.className = "settings-feedback";
+
+        try {
+          const query = new URLSearchParams({
+            instanceId: vals.instanceId,
+            region: vals.region
+          });
+          const res = await apiRequest(`/status?${query.toString()}`, { method: "GET" });
+          const stateLabel = res && res.state ? ` (State: ${res.state})` : "";
+          el.settingsFeedback.className = "settings-feedback visible success";
+          el.settingsFeedback.textContent = `Connection successful${stateLabel}`;
+        } catch (err) {
+          el.settingsFeedback.className = "settings-feedback visible error";
+          el.settingsFeedback.textContent = `Connection failed: ${err.message || "Unable to reach endpoint"}`;
+        } finally {
+          el.testConnectionBtn.disabled = false;
+          el.testConnectionLabel.textContent = "Test Connection";
+        }
+      });
+
+      function generateAppleTouchPng() {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 180;
+          canvas.height = 180;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          const grad = ctx.createLinearGradient(0, 0, 0, 180);
+          grad.addColorStop(0, "#0b3388");
+          grad.addColorStop(1, "#041238");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, 180, 180);
+
+          ctx.beginPath();
+          ctx.arc(90, 90, 56, 0, Math.PI * 2);
+          ctx.strokeStyle = "#21e06b";
+          ctx.lineWidth = 5;
+          ctx.stroke();
+
+          ctx.fillStyle = "#3b95ff";
+          [56, 81, 106].forEach((y) => {
+            ctx.beginPath();
+            ctx.roundRect(56, y, 68, 17, 5);
+            ctx.fill();
+          });
+
+          const appleLink = document.getElementById("appleTouchIcon");
+          if (appleLink) appleLink.href = canvas.toDataURL("image/png");
+        } catch (_) {}
+      }
+
+      function registerServiceWorker() {
+        if ("serviceWorker" in navigator) {
+          window.addEventListener("load", () => {
+            navigator.serviceWorker.register("./sw.js").catch(() => {});
+          });
+        }
+      }
+
+      async function init() {
+        generateAppleTouchPng();
+        registerServiceWorker();
+
+        const settings = getSettings();
+        updateUI();
+
+        appState.sessionTicker = setInterval(() => {
+          if (appState.ec2State === "running") {
+            updateDynamicTimersAndEstimates();
+          }
+        }, 1000);
+
+        startIdleRefresh();
+
+        if (isConfigured(settings)) {
+          await fetchStatus(false);
+        } else {
+          appState.ec2State = "stopped";
+          updateUI();
+          showActionBanner("Tap the Settings gear icon to configure your EC2 server.", "pending", false);
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>

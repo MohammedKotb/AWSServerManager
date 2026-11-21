@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b348c" />
+      <stop offset="100%" stop-color="#041136" />
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#68b7ff" />
+      <stop offset="100%" stop-color="#1b6be0" />
+    </linearGradient>
+    <linearGradient id="badge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2be875" />
+      <stop offset="100%" stop-color="#11a94d" />
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <circle cx="256" cy="256" r="168" fill="#09235e" stroke="#21e06b" stroke-width="14" />
+
+  <rect x="164" y="168" width="184" height="44" rx="12" fill="url(#bar)" />
+  <circle cx="294" cy="190" r="7" fill="#07225e" />
+  <circle cx="320" cy="190" r="7" fill="#07225e" />
+
+  <rect x="164" y="234" width="184" height="44" rx="12" fill="url(#bar)" />
+  <circle cx="294" cy="256" r="7" fill="#07225e" />
+  <circle cx="320" cy="256" r="7" fill="#07225e" />
+
+  <rect x="164" y="300" width="184" height="44" rx="12" fill="url(#bar)" />
+  <circle cx="294" cy="322" r="7" fill="#07225e" />
+  <circle cx="320" cy="322" r="7" fill="#07225e" />
+
+  <circle cx="368" cy="358" r="52" fill="url(#badge)" stroke="#08235c" stroke-width="10" />
+  <polyline points="344,358 361,375 394,341" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

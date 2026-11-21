@@ -1,0 +1,11 @@
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vs/
+*.user
+
+# Local secrets / env files (Never commit AWS credentials)
+.env
+*.pem
+*.ppk
+credentials.json
